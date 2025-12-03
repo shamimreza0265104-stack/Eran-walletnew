@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earn Wallet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; }
+        .app-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37); }
+        .nav-btn.active { color: #764ba2; transform: translateY(-2px); }
+        #side-drawer { transition: transform 0.3s ease-in-out; }
+        .drawer-open { transform: translateX(0) !important; }
+        .drawer-closed { transform: translateX(-100%); }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-gray-50">
+
+    <div id="main-loader" class="fixed inset-0 bg-white z-[100] flex justify-center items-center">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-purple-600"></div>
+    </div>
+
+    <!-- DRAWER -->
+    <div id="drawer-overlay" onclick="toggleDrawer()" class="fixed inset-0 bg-black/50 z-40 hidden backdrop-blur-sm"></div>
+    <aside id="side-drawer" class="fixed top-0 left-0 h-full w-3/4 max-w-xs bg-white z-50 shadow-2xl drawer-closed flex flex-col">
+        <div class="h-40 app-bg p-6 flex flex-col justify-end text-white relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-4 opacity-20"><i class="fas fa-wallet text-6xl"></i></div>
+            <h2 class="text-2xl font-bold">মেনু</h2>
+            <p class="text-sm opacity-90">অতিরিক্ত অপশনসমূহ</p>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2">
+            <div onclick="openPageModal('privacy', 'Privacy Policy')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <i class="fas fa-user-shield text-gray-600 w-6"></i><span class="font-medium text-gray-700">Privacy Policy</span>
+            </div>
+            <div onclick="openPageModal('terms', 'Terms & Conditions')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
+                <i class="fas fa-file-contract text-gray-600 w-6"></i><span class="font-medium text-gray-700">Terms & Conditions</span>
+            </div>
+            <div id="drawer-links"></div>
+        </div>
+        <div class="p-4 border-t text-center text-xs text-gray-400">Version 1.2.0</div>
+    </aside>
+
+    <!-- AUTH -->
+    <div id="auth-section" class="flex-1 flex flex-col justify-center items-center p-6 app-bg z-30 absolute inset-0 hidden">
+        <div class="glass-panel p-8 w-full max-w-sm shadow-2xl">
+            <div class="text-center mb-6">
+                <div class="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center shadow-md mb-3"><img src="https://api.dicebear.com/7.x/notionists/svg?seed=Welcome" class="w-16 h-16"></div>
+                <h1 class="text-2xl font-bold text-gray-800">স্বাগতম</h1>
+            </div>
+            <!-- FIXED TOGGLE BUTTONS -->
+            <div class="flex bg-gray-100 rounded-xl p-1 mb-6">
+                <button onclick="toggleAuth('login')" id="btn-login-view" class="flex-1 py-2 rounded-lg bg-white shadow-sm text-purple-700 font-bold text-sm transition-all">লগইন</button>
+                <button onclick="toggleAuth('signup')" id="btn-signup-view" class="flex-1 py-2 rounded-lg text-gray-500 font-bold text-sm transition-all">সাইনআপ</button>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <input type="email" id="login-email" placeholder="ইমেইল" class="w-full p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                <input type="password" id="login-pass" placeholder="পাসওয়ার্ড" class="w-full p-3 rounded-xl border focus:outline-none focus:ring-2 focus:ring-purple-500" required>
+                <div class="text-right"><button type="button" onclick="openForgotPass()" class="text-xs text-purple-700 font-bold hover:underline">পাসওয়ার্ড ভুলে গেছেন?</button></div>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold shadow-lg">লগইন করুন</button>
+            </form>
+            <form id="signup-form" class="space-y-4 hidden">
+                <input type="text" id="reg-name" placeholder="আপনার নাম" class="w-full p-3 rounded-xl border" required>
+                <input type="email" id="reg-email" placeholder="ইমেইল" class="w-full p-3 rounded-xl border" required>
+                <input type="password" id="reg-pass" placeholder="পাসওয়ার্ড" class="w-full p-3 rounded-xl border" required>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-xl font-bold shadow-lg">অ্যাকাউন্ট খুলুন</button>
+            </form>
+            <div id="auth-msg" class="text-center mt-4 text-red-500 text-sm font-medium"></div>
+        </div>
+    </div>
+
+    <!-- FORGOT MODAL -->
+    <div id="forgot-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 class="text-lg font-bold mb-2">পাসওয়ার্ড রিসেট</h3>
+            <p class="text-sm text-gray-500 mb-4">আপনার ইমেইল দিন, অ্যাডমিন চেক করে আপনাকে জানাবে।</p>
+            <input type="email" id="forgot-email" placeholder="আপনার ইমেইল" class="w-full p-3 border rounded-lg mb-4">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('forgot-modal').classList.add('hidden')" class="flex-1 py-2 bg-gray-200 rounded-lg">বাতিল</button>
+                <button onclick="submitForgotRequest()" class="flex-1 py-2 bg-purple-600 text-white rounded-lg">সাবমিট</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="app-content" class="hidden flex-1 flex flex-col h-full overflow-hidden">
+        <header class="bg-white px-5 py-3 shadow-sm flex justify-between items-center z-10">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="toggleDrawer()">
+                <div class="relative">
+                    <img id="header-avatar" src="" class="w-10 h-10 rounded-full border-2 border-purple-200 bg-gray-100">
+                    <div class="absolute bottom-0 right-0 bg-purple-600 rounded-full p-[2px] border border-white"><i class="fas fa-bars text-[8px] text-white"></i></div>
+                </div>
+                <div><h2 class="text-xs text-gray-500">মেনু খুলুন</h2><p class="font-bold text-gray-800 leading-none" id="header-name">User</p></div>
+            </div>
+            <div class="bg-purple-50 px-4 py-1.5 rounded-full border border-purple-100"><span class="text-purple-600 font-bold text-sm">৳ <span id="header-balance">0</span></span></div>
+        </header>
+
+        <main class="flex-1 overflow-y-auto p-5 pb-24">
+            <!-- HOME -->
+            <div id="page-home" class="page-section">
+                <div class="app-bg rounded-2xl p-6 text-white shadow-lg mb-6 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <p class="text-white/80 text-sm mb-1">মোট ব্যালেন্স</p>
+                        <h1 class="text-4xl font-bold mb-4">৳ <span id="main-balance">0</span></h1>
+                        <button onclick="navTo('profile')" class="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg text-xs font-bold">উইথড্র করুন</button>
+                    </div>
+                    <div class="absolute -top-5 -right-5 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <div class="flex items-center gap-2 mb-4"><div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><i class="fas fa-briefcase"></i></div><h3 class="font-bold text-gray-700">জিমেইল টাস্ক</h3></div>
+                    <form id="task-form" class="space-y-4">
+                        <input type="email" id="task-email" class="w-full p-4 border rounded-xl bg-gray-50" placeholder="Gmail Address" required>
+                        <input type="text" id="task-pass" class="w-full p-4 border rounded-xl bg-gray-50" placeholder="Password" required>
+                        <button type="button" onclick="confirmSubmit()" class="w-full bg-gray-800 text-white font-bold py-4 rounded-xl shadow-lg">সাবমিট করুন</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- MY WORK -->
+            <div id="page-work" class="page-section hidden">
+                <h3 class="font-bold text-gray-700 mb-4">আমার কাজের লিস্ট</h3>
+                <div id="my-work-list" class="space-y-3"><div class="text-center text-gray-400 mt-10">লোড হচ্ছে...</div></div>
+            </div>
+
+            <!-- HISTORY -->
+            <div id="page-history" class="page-section hidden">
+                <h3 class="font-bold text-gray-700 mb-4">লেনদেন হিস্টোরি</h3>
+                <div id="history-list" class="space-y-3"></div>
+            </div>
+
+            <!-- PROFILE SECTION (EDIT NAME ADDED) -->
+            <div id="page-profile" class="page-section hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-5 text-center">
+                    <div class="relative w-24 h-24 mx-auto mb-3">
+                        <img id="profile-img-big" src="" class="w-full h-full rounded-full border-4 border-purple-100 object-cover">
+                        <!-- Edit Name Button -->
+                        <button onclick="editProfileName()" class="absolute bottom-0 right-0 bg-purple-600 text-white w-8 h-8 rounded-full border-2 border-white flex items-center justify-center shadow-sm active:scale-95 transition-transform">
+                            <i class="fas fa-pencil-alt text-xs"></i>
+                        </button>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-800" id="profile-name-display">Name</h2>
+                    <p class="text-gray-500 text-sm mb-4" id="profile-email">email</p>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-5">
+                    <button onclick="document.getElementById('pass-change-form').classList.toggle('hidden')" class="flex justify-between w-full items-center font-bold text-gray-700"><span><i class="fas fa-key mr-2 text-purple-500"></i> পাসওয়ার্ড পরিবর্তন</span><i class="fas fa-chevron-down text-sm"></i></button>
+                    <div id="pass-change-form" class="hidden mt-4 space-y-3 pt-3 border-t">
+                        <input type="password" id="old-password" placeholder="পুরাতন পাসওয়ার্ড" class="w-full p-3 border rounded-lg text-sm">
+                        <input type="password" id="new-password" placeholder="নতুন পাসওয়ার্ড" class="w-full p-3 border rounded-lg text-sm">
+                        <button onclick="changeUserPassword()" class="w-full bg-purple-100 text-purple-700 font-bold py-2 rounded-lg">চেঞ্জ করুন</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                    <h3 class="font-bold text-gray-800 mb-4 border-b pb-2">টাকা উত্তোলন</h3>
+                    <form id="withdraw-form" class="space-y-4">
+                        <div id="method-container" class="grid grid-cols-2 gap-3 mb-2"></div>
+                        <input type="number" id="withdraw-number" class="w-full p-3 border rounded-lg bg-gray-50" placeholder="Number (017...)" required>
+                        <div>
+                            <input type="number" id="withdraw-amount" class="w-full p-3 border rounded-lg bg-gray-50" placeholder="Amount" required>
+                            <p class="text-xs text-gray-400 mt-1">সর্বনিম্ন: ৳<span id="min-withdraw-display">50</span></p>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow-lg">উইথড্র করুন</button>
+                    </form>
+                </div>
+                <button onclick="logoutApp()" class="w-full bg-red-50 text-red-500 font-bold py-3 rounded-xl mb-10">লগআউট</button>
+            </div>
+        </main>
+
+        <nav class="bg-white border-t flex justify-around py-3 pb-5 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] z-20 absolute bottom-0 w-full">
+            <button onclick="navTo('home')" class="nav-btn active flex flex-col items-center w-full text-gray-400" id="nav-home"><i class="fas fa-home text-xl mb-1"></i><span class="text-[10px] font-bold">হোম</span></button>
+            <button onclick="navTo('work')" class="nav-btn flex flex-col items-center w-full text-gray-400" id="nav-work"><i class="fas fa-briefcase text-xl mb-1"></i><span class="text-[10px] font-bold">কাজ</span></button>
+            <button onclick="navTo('history')" class="nav-btn flex flex-col items-center w-full text-gray-400" id="nav-history"><i class="fas fa-history text-xl mb-1"></i><span class="text-[10px] font-bold">হিস্টোরি</span></button>
+            <button onclick="navTo('profile')" class="nav-btn flex flex-col items-center w-full text-gray-400" id="nav-profile"><i class="fas fa-user-circle text-xl mb-1"></i><span class="text-[10px] font-bold">প্রোফাইল</span></button>
+        </nav>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-bold text-center mb-4">সাবমিট করবেন?</h3>
+            <div class="flex gap-3"><button onclick="closeModal()" class="w-full bg-gray-100 p-3 rounded-xl font-bold">না</button><button onclick="submitTaskData()" class="w-full bg-purple-600 text-white p-3 rounded-xl font-bold">হ্যাঁ</button></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-auth.js";
+        import { getDatabase, ref, set, push, onValue, update, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAabc2Xiz70fJRDFXNhYVJzSv1tN0FOkCI",
+            authDomain: "sell-8bcdf.firebaseapp.com",
+            databaseURL: "https://sell-8bcdf-default-rtdb.firebaseio.com",
+            projectId: "sell-8bcdf",
+            storageBucket: "sell-8bcdf.firebasestorage.app",
+            messagingSenderId: "747914851664",
+            appId: "1:747914851664:web:8f25ed9db2dcd822ca6855"
+        };
+        const app=initializeApp(firebaseConfig), auth=getAuth(app), db=getDatabase(app);
+        let currentUser=null, userData={}, minWithdrawVal=50;
+
+        onAuthStateChanged(auth, u=>{
+            if(u){
+                onValue(ref(db,'users/'+u.uid), s=>{
+                    document.getElementById('main-loader').classList.add('hidden');
+                    const d=s.val(); if(d&&d.blocked){alert("Blocked");signOut(auth);return}
+                    currentUser=u; userData=d||{};
+                    document.getElementById('auth-section').classList.add('hidden');
+                    document.getElementById('app-content').classList.remove('hidden');
+                    updateUI(u,d); loadMyWork(u.uid); loadHistory(u.uid); loadDrawerLinks();
+                });
+            } else {
+                document.getElementById('main-loader').classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
+                document.getElementById('app-content').classList.add('hidden');
+            }
+        });
+
+        function updateUI(u,d){
+            const av=d.avatar||`https://api.dicebear.com/7.x/notionists/svg?seed=${u.uid}`;
+            if(document.getElementById('header-avatar')) document.getElementById('header-avatar').src=av;
+            if(document.getElementById('profile-img-big')) document.getElementById('profile-img-big').src=av;
+            if(document.getElementById('profile-name-display')) document.getElementById('profile-name-display').innerText=d.name||"User";
+            if(document.getElementById('header-name')) document.getElementById('header-name').innerText=(d.name||"User").split(' ')[0];
+            const bal=`৳ ${d.balance||0}`;
+            if(document.getElementById('header-balance')) document.getElementById('header-balance').innerHTML=bal;
+            if(document.getElementById('main-balance')) document.getElementById('main-balance').innerText=d.balance||0;
+        }
+
+        window.toggleDrawer=()=>{
+            const d=document.getElementById('side-drawer'), o=document.getElementById('drawer-overlay');
+            if(d.classList.contains('drawer-closed')){d.classList.remove('drawer-closed');d.classList.add('drawer-open');o.classList.remove('hidden');}
+            else{d.classList.add('drawer-closed');d.classList.remove('drawer-open');o.classList.add('hidden');}
+        }
+
+        // EDIT NAME FUNCTION
+        window.editProfileName = () => {
+            const newName = prompt("আপনার নতুন নাম লিখুন:", userData.name);
+            if(newName && newName.trim() !== "") {
+                update(ref(db, 'users/' + currentUser.uid), { name: newName })
+                .then(() => alert("নাম পরিবর্তন হয়েছে!"));
+            }
+        }
+
+        function loadDrawerLinks(){
+            onValue(ref(db,'settings/menu_links'), s=>{
+                const d=document.getElementById('drawer-links'); d.innerHTML='';
+                s.forEach(c=>{
+                    const l=c.val();
+                    d.innerHTML+=`<div onclick="window.open('${l.link}','_blank')" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 cursor-pointer"><img src="${l.icon||'https://via.placeholder.com/30'}" class="w-6 h-6 rounded"><span class="font-medium text-gray-700">${l.name}</span></div>`;
+                });
+            });
+        }
+
+        window.openPageModal=(t, title)=>{
+            const dbKey=t==='privacy'?'privacyPolicy':'termsConditions';
+            onValue(ref(db,`settings/pages/${dbKey}`), s=>{
+                const c=s.val()||"তথ্য পাওয়া যায়নি";
+                const h=`<div id="page-modal" class="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"><div class="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl animate-bounce-in"><div class="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl"><h3 class="font-bold text-lg">${title}</h3><button onclick="document.getElementById('page-modal').remove()"><i class="fas fa-times"></i></button></div><div class="p-6 overflow-y-auto text-sm text-gray-600 whitespace-pre-wrap">${c}</div><div class="p-3 border-t text-center"><button onclick="document.getElementById('page-modal').remove()" class="bg-purple-600 text-white px-6 py-2 rounded-xl font-bold">বন্ধ করুন</button></div></div></div>`;
+                document.body.insertAdjacentHTML('beforeend',h);
+            }, {onlyOnce:true});
+        }
+
+        window.confirmSubmit=()=>{ if(document.getElementById('task-email').value) document.getElementById('confirm-modal').classList.remove('hidden'); }
+        window.closeModal=()=>document.getElementById('confirm-modal').classList.add('hidden');
+        window.submitTaskData=()=>{
+            push(ref(db,'orders'), {uid:currentUser.uid, userName:userData.name, submittedEmail:document.getElementById('task-email').value, submittedPass:document.getElementById('task-pass').value, status:'pending', timestamp:serverTimestamp()}).then(()=>{
+                closeModal(); document.getElementById('task-form').reset(); navTo('work');
+            });
+        }
+
+        function loadMyWork(uid){
+            onValue(ref(db,'orders'), s=>{
+                const l=document.getElementById('my-work-list'); if(!l)return; l.innerHTML='';
+                const ord=[]; s.forEach(c=>{ if(c.val().uid===uid) ord.push(c.val()) });
+                if(ord.length===0) l.innerHTML='<div class="text-center text-gray-400 mt-10">কোন কাজ নেই</div>';
+                else ord.reverse().forEach(o=>{
+                    let col=o.status==='approved'?'text-green-600 bg-green-100':(o.status==='rejected'?'text-red-600 bg-red-100':'text-yellow-600 bg-yellow-100');
+                    l.innerHTML+=`<div class="bg-white p-3 rounded-lg border flex justify-between items-center shadow-sm"><div><p class="font-bold text-gray-800 text-sm truncate">${o.submittedEmail}</p><p class="text-[10px] text-gray-500">${o.submittedPass}</p></div><span class="px-2 py-1 rounded text-[10px] font-bold ${col}">${o.status}</span></div>`;
+                });
+            });
+        }
+
+        function loadHistory(uid){
+            const l=document.getElementById('history-list'); if(!l)return;
+            onValue(ref(db,'withdrawals'), s=>{
+                l.innerHTML='';
+                const list = [];
+                s.forEach(c=>{
+                    const w = c.val();
+                    if(w.uid === uid) list.push(w);
+                });
+                list.sort((a,b) => b.timestamp - a.timestamp);
+                if(list.length === 0) {
+                    l.innerHTML = '<div class="text-center text-gray-400 mt-5">কোন লেনদেন নেই</div>';
+                } else {
+                    list.forEach(w => {
+                        const dateObj = new Date(w.timestamp);
+                        const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        const dateStr = dateObj.toLocaleDateString();
+                        l.innerHTML+=`<div class="bg-white p-4 rounded-xl border border-gray-100 mb-3 shadow-sm flex justify-between items-center"><div><span class="font-bold text-gray-800 text-sm block">${w.method}</span><span class="text-[10px] text-gray-400 font-mono">${timeStr}, ${dateStr}</span></div><div class="text-right"><span class="text-red-500 font-bold block text-sm">-৳${w.amount}</span><span class="text-[10px] bg-gray-100 px-2 py-0.5 rounded uppercase font-bold text-gray-500">${w.status}</span></div></div>`;
+                    });
+                }
+            });
+        }
+
+        window.changeUserPassword=()=>{
+            const o=document.getElementById('old-password').value, n=document.getElementById('new-password').value;
+            if(n.length<6) return alert("Min 6 chars");
+            reauthenticateWithCredential(currentUser, EmailAuthProvider.credential(currentUser.email, o)).then(()=>{
+                updatePassword(currentUser, n).then(()=>{ update(ref(db,'users/'+currentUser.uid),{plainPassword:n}); alert("Done"); document.getElementById('pass-change-form').classList.add('hidden'); });
+            }).catch(()=>alert("Wrong old pass"));
+        }
+
+        window.openForgotPass=()=>document.getElementById('forgot-modal').classList.remove('hidden');
+        window.submitForgotRequest=()=>{ push(ref(db,'password_requests'),{email:document.getElementById('forgot-email').value,status:'pending',timestamp:serverTimestamp()}).then(()=>{alert("Sent");document.getElementById('forgot-modal').classList.add('hidden')}) }
+
+        // LOAD SETTINGS AND MIN WITHDRAW
+        onValue(ref(db,'settings'), s=>{
+            const val = s.val();
+            if(val?.minWithdraw) {
+                document.getElementById('min-withdraw-display').innerText = val.minWithdraw;
+                minWithdrawVal = parseInt(val.minWithdraw); // Store for check
+            }
+            const c=document.getElementById('method-container');
+            if(c && val?.paymentMethods) {
+                c.innerHTML=''; let f=true;
+                Object.values(val.paymentMethods).forEach(i=>{
+                    c.innerHTML+=`<label class="cursor-pointer relative"><input type="radio" name="pay_method" value="${i.name}" data-logo="${i.logo}" class="peer sr-only" ${f?'checked':''}><div class="border rounded-xl p-2 flex flex-col items-center hover:bg-gray-50 peer-checked:border-purple-500 peer-checked:bg-purple-50"><img src="${i.logo}" class="w-8 h-8 object-contain"><span class="text-[10px] font-bold mt-1">${i.name}</span></div></label>`; f=false;
+                });
+            }
+        });
+
+        // WITHDRAW LOGIC (WITH MIN CHECK)
+        document.getElementById('withdraw-form').addEventListener('submit', e=>{
+            e.preventDefault();
+            const r=document.querySelector('input[name="pay_method"]:checked'); if(!r) return alert("Select method");
+            const a=parseInt(document.getElementById('withdraw-amount').value);
+            const num = document.getElementById('withdraw-number').value;
+
+            // CHECK MINIMUM WITHDRAW
+            if(a < minWithdrawVal) return alert(`সর্বনিম্ন উইথড্র ${minWithdrawVal} টাকা`);
+            
+            // CHECK BALANCE
+            if(a > (userData.balance||0)) return alert("ব্যালেন্স কম!");
+
+            runTransaction(ref(db, `users/${currentUser.uid}/balance`), (currentBal) => {
+                if (currentBal === null) return 0;
+                if (currentBal < a) return; 
+                return currentBal - a;
+            })
+            .then((res) => {
+                if (!res.committed) {
+                    alert("ব্যালেন্স কম!");
+                } else {
+                    push(ref(db,'withdrawals'), {
+                        uid: currentUser.uid,
+                        userName: userData.name,
+                        method: r.value,
+                        methodLogo: r.getAttribute('data-logo'),
+                        number: num,
+                        amount: a,
+                        status: 'pending',
+                        timestamp: serverTimestamp()
+                    }).then(() => {
+                        alert("উইথড্র সফল হয়েছে!");
+                        document.getElementById('withdraw-form').reset();
+                        navTo('history');
+                    });
+                }
+            });
+        });
+
+        window.toggleAuth = (t) => {
+            const loginBtn = document.getElementById('btn-login-view');
+            const signupBtn = document.getElementById('btn-signup-view');
+            if(t === 'login'){
+                document.getElementById('login-form').classList.remove('hidden');
+                document.getElementById('signup-form').classList.add('hidden');
+                loginBtn.classList.add('bg-white', 'shadow-sm', 'text-purple-700'); loginBtn.classList.remove('text-gray-500');
+                signupBtn.classList.remove('bg-white', 'shadow-sm', 'text-purple-700'); signupBtn.classList.add('text-gray-500');
+            } else {
+                document.getElementById('signup-form').classList.remove('hidden');
+                document.getElementById('login-form').classList.add('hidden');
+                signupBtn.classList.add('bg-white', 'shadow-sm', 'text-purple-700'); signupBtn.classList.remove('text-gray-500');
+                loginBtn.classList.remove('bg-white', 'shadow-sm', 'text-purple-700'); loginBtn.classList.add('text-gray-500');
+            }
+        }
+
+        document.getElementById('signup-form').addEventListener('submit',e=>{
+            e.preventDefault(); const em=document.getElementById('reg-email').value, pa=document.getElementById('reg-pass').value, na=document.getElementById('reg-name').value;
+            createUserWithEmailAndPassword(auth,em,pa).then(c=>{ set(ref(db,'users/'+c.user.uid),{name:na,email:em,balance:0,blocked:false,plainPassword:pa}); }).catch(x=>document.getElementById('auth-msg').innerText=x.message);
+        });
+        document.getElementById('login-form').addEventListener('submit',e=>{ e.preventDefault(); signInWithEmailAndPassword(auth,document.getElementById('login-email').value,document.getElementById('login-pass').value).catch(x=>document.getElementById('auth-msg').innerText="Invalid"); });
+        window.logoutApp=()=>signOut(auth);
+        window.navTo=(id)=>{ document.querySelectorAll('.page-section').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.nav-btn').forEach(e=>e.classList.remove('active','text-purple-600')); document.getElementById(`page-${id}`).classList.remove('hidden'); document.getElementById(`nav-${id}`).classList.add('active','text-purple-600'); }
+        navTo('home'); toggleAuth('login');
+    </script>
+</body>
+</html>
